@@ -1,0 +1,11 @@
+# Core pipeline (ingest -> load -> transform -> quality)
+duckdb>=1.0
+pandas>=2.0
+pyarrow>=14.0
+
+# Dashboard
+streamlit>=1.30
+altair>=5.0
+
+# Tests
+pytest>=8.0

@@ -1,0 +1,17 @@
+# CommercePipeline dashboard theme.
+# Matches the portfolio design language: indigo accent, slate neutrals, Inter.
+
+[theme]
+base = "light"
+primaryColor = "#4f46e5"            # indigo-600 — accent / interactive
+backgroundColor = "#f8fafc"         # slate-50 — page background
+secondaryBackgroundColor = "#ffffff"  # white — cards / sidebar
+textColor = "#0f172a"               # slate-900 — body text
+font = "Inter"
+
+[server]
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,16 @@
+# Run the whole thing with: docker compose up --build
+# Then open http://localhost:8501
+services:
+  commerce-pipeline:
+    build: .
+    image: commerce-pipeline:latest
+    ports:
+      - "8501:8501"
+    environment:
+      # Override any synthetic-data knob here, e.g. a bigger dataset:
+      # CP_N_ORDERS: "50000"
+      CP_SEED: "42"
+    volumes:
+      # Persist the generated warehouse on the host (optional).
+      - ./data:/app/data
+    restart: unless-stopped
