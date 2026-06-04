@@ -21,12 +21,27 @@ than crashing.
 from __future__ import annotations
 
 import sys
+import textwrap
 from pathlib import Path
 
 import altair as alt
 import duckdb
 import pandas as pd
 import streamlit as st
+
+# Streamlit renders via markdown, which turns 4+ space-indented lines into a code
+# block — that would print our inline HTML/CSS as visible text instead of applying
+# it. Dedent every HTML string so tags start at column 0 and render as HTML.
+_st_markdown = st.markdown
+
+
+def _dedented_markdown(body, *args, **kwargs):
+    if isinstance(body, str):
+        body = textwrap.dedent(body).strip("\n")
+    return _st_markdown(body, *args, **kwargs)
+
+
+st.markdown = _dedented_markdown
 
 # Make the `pipeline` package importable when run via `streamlit run`.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -96,9 +111,6 @@ def inject_styles() -> None:
     header, bento KPI cards with an accent rail, and monospace numerals."""
     st.markdown(
         f"""
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
         <style>
           :root {{
             --teal:#0d9488; --teal-700:#0f766e; --teal-50:#f0fdfa;
