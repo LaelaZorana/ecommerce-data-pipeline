@@ -63,7 +63,7 @@ TEAL_RAMP = ["#ecfeff", "#99f6e4", "#2dd4bf", "#0d9488", "#0f766e", "#115e59"]
 MONO = "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', Menlo, monospace"
 
 st.set_page_config(
-    page_title="CommercePipeline — Analytics",
+    page_title="CommercePipeline, Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -624,7 +624,7 @@ reads the marts the **quality gate** signed off on.
 | **1** | **Ingest** | Seeded synthetic generator | {health['raw_rows']:,} raw rows across {health['raw_tables']} Parquet/CSV tables |
 | **2** | **Load** | Register raw files into DuckDB | `raw` schema |
 | **3** | **Transform** | Layered SQL: staging → intermediate → marts | {len(health['marts'])} marts ({", ".join(f"`{m}`" for m in health['marts'])}) |
-| **4** | **Quality gate** | Declarative checks (not-null, unique, ranges, accepted values, referential integrity, mart sanity) | **{health['gates_passed']}/{health['gates_total']} passing** — a single failure exits non-zero and **halts the build** |
+| **4** | **Quality gate** | Declarative checks (not-null, unique, ranges, accepted values, referential integrity, mart sanity) | **{health['gates_passed']}/{health['gates_total']} passing**: a single failure exits non-zero and **halts the build** |
 
 ```text
 ingest ─▶ load ─▶ transform ─▶ quality gate ─▶ dashboard
@@ -640,7 +640,7 @@ addressable individually: `python -m pipeline {{ingest,load,transform,quality}}`
 st.markdown(
     f"""
     <div class="cp-footer">
-      <span>Built by <b>Laela Zorana</b> · CommercePipeline — trustworthy e-commerce analytics.</span>
+      <span>Built by <b>Laela Zorana</b> · CommercePipeline, trustworthy e-commerce analytics.</span>
       <span>Source: <code>{settings.db_path.name}</code> · {len(daily):,} active days ·
             rebuild with <code>make pipeline</code></span>
     </div>
