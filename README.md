@@ -31,7 +31,7 @@ flowchart LR
     subgraph quality["4 · Quality gate"]
         marts --> checks{"not-null · unique<br/>ranges · accepted values<br/>referential integrity"}
         checks -->|pass| ok([pipeline succeeds])
-        checks -->|fail| stop([exit 1 — build fails])
+        checks -->|fail| stop([exit 1: build fails])
     end
 
     marts --> dash["Streamlit dashboard<br/>revenue · products · funnel · cohorts"]

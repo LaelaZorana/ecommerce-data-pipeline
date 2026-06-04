@@ -5,7 +5,7 @@ as a polished, data-forward BI product: a branded header, a bento-style KPI
 grid, monospace numerals, one cohesive teal chart palette, and a clear
 lineage / quality-gate section.
 
-The visual identity is ANALYTICS / BI — a confident teal accent on cool slate
+The visual identity is ANALYTICS / BI: a confident teal accent on cool slate
 neutrals, distinct from the rest of the portfolio. Theme tokens live in
 ``.streamlit/config.toml``; this file mirrors the same tokens so the Altair
 charts and custom CSS stay in lock-step.
@@ -30,7 +30,7 @@ import pandas as pd
 import streamlit as st
 
 # Streamlit renders via markdown, which turns 4+ space-indented lines into a code
-# block — that would print our inline HTML/CSS as visible text instead of applying
+# block. That would print our inline HTML/CSS as visible text instead of applying
 # it. Dedent every HTML string so tags start at column 0 and render as HTML.
 _st_markdown = st.markdown
 
@@ -47,12 +47,12 @@ st.markdown = _dedented_markdown
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.config import get_settings  # noqa: E402
 
-# --- Brand palette — ANALYTICS / BI identity (teal on slate) ------------------
+# --- Brand palette: ANALYTICS / BI identity (teal on slate) -------------------
 # Mirrors .streamlit/config.toml so charts + CSS share one language.
-TEAL = "#0d9488"          # teal-600 — primary accent
-TEAL_500 = "#14b8a6"      # teal-500 — line strokes
-TEAL_SOFT = "#99f6e4"     # teal-200 — area fill
-INK = "#0f1b2a"           # near slate-900 — body / values
+TEAL = "#0d9488"          # teal-600: primary accent
+TEAL_500 = "#14b8a6"      # teal-500: line strokes
+TEAL_SOFT = "#99f6e4"     # teal-200: area fill
+INK = "#0f1b2a"           # near slate-900: body / values
 SLATE_500 = "#64748b"     # muted labels
 GRID = "#eef2f6"          # hairline chart grid
 # Ordered categorical scale used across every chart for one colour identity.
@@ -186,7 +186,7 @@ def inject_styles() -> None:
             font-size:0.7rem !important; font-weight:600 !important; letter-spacing:0.07em;
             text-transform:uppercase; color:var(--muted) !important;
           }}
-          /* Monospace, tabular numerals — the data-tool hallmark. */
+          /* Monospace, tabular numerals: the data-tool hallmark. */
           div[data-testid="stMetricValue"] {{
             font-family:var(--mono) !important; font-size:1.7rem !important; font-weight:700 !important;
             color:var(--ink) !important; letter-spacing:-0.01em; font-variant-numeric:tabular-nums;
@@ -602,7 +602,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Per-check status grid — the gate, made legible.
+# Per-check status grid: the gate, made legible.
 _checks = sorted(health["checks"], key=lambda c: (c["passed"], c["name"]))
 _rows = "".join(
     f"<div class='cp-check {'pass' if c['passed'] else 'fail'}'>"
