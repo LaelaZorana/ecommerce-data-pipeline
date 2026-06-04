@@ -1,8 +1,14 @@
 """Streamlit dashboard for the CommercePipeline marts.
 
 Reads the DuckDB warehouse produced by the pipeline (read-only) and presents it
-as a polished analytics product: a branded header, headline data-quality proof
-cards, business KPIs, and styled revenue / product / funnel / cohort views.
+as a polished, data-forward BI product: a branded header, a bento-style KPI
+grid, monospace numerals, one cohesive teal chart palette, and a clear
+lineage / quality-gate section.
+
+The visual identity is ANALYTICS / BI — a confident teal accent on cool slate
+neutrals, distinct from the rest of the portfolio. Theme tokens live in
+``.streamlit/config.toml``; this file mirrors the same tokens so the Altair
+charts and custom CSS stay in lock-step.
 
 Run with::
 
@@ -26,14 +32,20 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.config import get_settings  # noqa: E402
 
-# --- Brand palette (matches the portfolio design language) --------------------
-INDIGO = "#4f46e5"        # indigo-600 — primary
-INDIGO_SOFT = "#a5b4fc"   # indigo-300 — area fill
-VIOLET = "#8b5cf6"        # violet-500 — secondary accent
-SLATE_900 = "#0f172a"
-SLATE_500 = "#64748b"
-# Ordered categorical scale used across charts for consistent colour identity.
-CATEGORY_RANGE = ["#4f46e5", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899"]
+# --- Brand palette — ANALYTICS / BI identity (teal on slate) ------------------
+# Mirrors .streamlit/config.toml so charts + CSS share one language.
+TEAL = "#0d9488"          # teal-600 — primary accent
+TEAL_500 = "#14b8a6"      # teal-500 — line strokes
+TEAL_SOFT = "#99f6e4"     # teal-200 — area fill
+INK = "#0f1b2a"           # near slate-900 — body / values
+SLATE_500 = "#64748b"     # muted labels
+GRID = "#eef2f6"          # hairline chart grid
+# Ordered categorical scale used across every chart for one colour identity.
+CATEGORY_RANGE = ["#0d9488", "#2563eb", "#7c3aed", "#d97706", "#059669", "#db2777", "#0891b2"]
+# Single-hue teal ramp for sequential / heatmap encodings.
+TEAL_RAMP = ["#ecfeff", "#99f6e4", "#2dd4bf", "#0d9488", "#0f766e", "#115e59"]
+# Monospace stack for tabular numerals (the data-tool hallmark).
+MONO = "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', Menlo, monospace"
 
 st.set_page_config(
     page_title="CommercePipeline — Analytics",
@@ -46,99 +58,166 @@ st.set_page_config(
 settings = get_settings()
 
 
+# --- One cohesive Altair theme for every chart -------------------------------
+# A single config so all charts share one visual language: a clean sans body,
+# hairline horizontal grid, no chart borders, and teal-led colour ranges.
+_LABEL = {"labelColor": SLATE_500, "titleColor": SLATE_500,
+          "labelFontSize": 11, "titleFontSize": 11, "labelFontWeight": 500}
+_CHART_CONFIG = {
+    "config": {
+        "background": "transparent",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        "view": {"stroke": "transparent"},
+        "axis": {
+            "domain": False, "ticks": False, "labelPadding": 8, "titlePadding": 12,
+            "gridColor": GRID, "gridWidth": 1, **_LABEL,
+        },
+        "axisX": {"grid": False},
+        "axisY": {"grid": True},
+        "legend": {**_LABEL, "symbolType": "circle", "symbolSize": 90},
+        "range": {"category": CATEGORY_RANGE, "heatmap": TEAL_RAMP, "ramp": TEAL_RAMP},
+        "title": {"color": INK, "fontSize": 13, "fontWeight": 600, "anchor": "start", "dy": -4},
+        "bar": {"color": TEAL},
+        "rect": {"stroke": "#ffffff", "strokeWidth": 1.5},
+    }
+}
+
+# Altair 5.5+ uses ``alt.theme``; fall back to the legacy registry on older 5.x.
+try:  # pragma: no cover - thin shim around the charting lib
+    alt.theme.register("commerce_bi", enable=True)(lambda: _CHART_CONFIG)
+except AttributeError:  # pragma: no cover
+    alt.themes.register("commerce_bi", lambda: _CHART_CONFIG)
+    alt.themes.enable("commerce_bi")
+
+
 # --- Global styling -----------------------------------------------------------
 def inject_styles() -> None:
-    """Load Inter, hide default Streamlit chrome, and style cards / headings."""
+    """Hide default Streamlit chrome and apply the teal BI identity: branded
+    header, bento KPI cards with an accent rail, and monospace numerals."""
     st.markdown(
-        """
+        f"""
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
         <style>
+          :root {{
+            --teal:#0d9488; --teal-700:#0f766e; --teal-50:#f0fdfa;
+            --ink:#0f1b2a; --muted:#64748b; --line:#e6ebf0; --mono:{MONO};
+          }}
           html, body, [class*="css"], .stApp,
-          button, input, textarea, select { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+          button, input, textarea, select {{ font-family:'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }}
 
           /* Remove default Streamlit clutter. */
-          #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
-          .stDeployButton { display: none; }
-          .block-container { padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px; }
+          #MainMenu, footer, header[data-testid="stHeader"] {{ visibility:hidden; }}
+          .stDeployButton {{ display:none; }}
+          .block-container {{ padding-top:2.1rem; padding-bottom:3rem; max-width:1200px; }}
 
-          /* Subtle page gradient, like the rest of the portfolio. */
-          .stApp {
+          /* Restrained, BI-grade canvas: a single cool wash, no rainbow. */
+          .stApp {{
             background:
-              radial-gradient(48rem 48rem at 108% -8%, rgba(139,92,246,0.10), transparent 55%),
-              radial-gradient(42rem 42rem at -8% -6%, rgba(99,102,241,0.12), transparent 52%),
-              #f8fafc;
-          }
+              radial-gradient(46rem 40rem at 104% -10%, rgba(13,148,136,0.07), transparent 55%),
+              radial-gradient(40rem 38rem at -6% -8%, rgba(37,99,235,0.05), transparent 52%),
+              #f5f7f9;
+          }}
 
           /* Branded header. */
-          .cp-header { display:flex; align-items:center; gap:0.85rem; margin-bottom:0.35rem; }
-          .cp-logo {
-            display:grid; place-items:center; width:44px; height:44px; border-radius:13px;
-            background:linear-gradient(135deg,#4f46e5,#8b5cf6); color:#fff;
-            box-shadow:0 8px 18px -6px rgba(79,70,229,0.55); flex:0 0 auto;
-          }
-          .cp-logo svg { width:24px; height:24px; }
-          .cp-title { font-size:1.65rem; font-weight:800; letter-spacing:-0.02em; line-height:1.05; color:#0f172a; }
-          .cp-title .grad {
-            background:linear-gradient(100deg,#4f46e5,#8b5cf6);
+          .cp-header {{ display:flex; align-items:center; gap:0.85rem; margin-bottom:0.3rem; }}
+          .cp-logo {{
+            display:grid; place-items:center; width:46px; height:46px; border-radius:13px;
+            background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff;
+            box-shadow:0 8px 18px -7px rgba(13,148,136,0.6); flex:0 0 auto;
+          }}
+          .cp-logo svg {{ width:25px; height:25px; }}
+          .cp-title {{ font-size:1.68rem; font-weight:800; letter-spacing:-0.022em; line-height:1.05; color:var(--ink); }}
+          .cp-title .grad {{
+            background:linear-gradient(100deg,#0d9488,#14b8a6);
             -webkit-background-clip:text; background-clip:text; color:transparent;
-          }
-          .cp-eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#94a3b8; }
-          .cp-lede { color:#475569; font-size:1.02rem; line-height:1.6; max-width:48rem; margin:0.5rem 0 0.2rem; }
-          .cp-lede b { color:#4338ca; font-weight:600; }
+          }}
+          .cp-eyebrow {{ font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; }}
+          .cp-lede {{ color:#475569; font-size:1.0rem; line-height:1.6; max-width:50rem; margin:0.55rem 0 0.2rem; }}
+          .cp-lede b {{ color:var(--teal-700); font-weight:600; }}
 
           /* Pill / badge row under the header. */
-          .cp-pills { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.9rem; }
-          .cp-pill {
-            display:inline-flex; align-items:center; gap:0.4rem;
-            font-size:0.78rem; font-weight:600; color:#3730a3;
-            background:rgba(99,102,241,0.10); border:1px solid rgba(99,102,241,0.22);
-            padding:0.28rem 0.65rem; border-radius:999px;
-          }
-          .cp-pill.ok { color:#047857; background:rgba(16,185,129,0.10); border-color:rgba(16,185,129,0.25); }
-          .cp-dot { width:6px; height:6px; border-radius:999px; background:currentColor; }
+          .cp-pills {{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.95rem; }}
+          .cp-pill {{
+            display:inline-flex; align-items:center; gap:0.45rem;
+            font-size:0.76rem; font-weight:600; color:#334e68;
+            background:#fff; border:1px solid var(--line);
+            padding:0.3rem 0.7rem; border-radius:999px;
+            box-shadow:0 1px 2px rgba(15,27,42,0.04);
+          }}
+          .cp-pill b {{ font-family:var(--mono); font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); }}
+          .cp-pill.ok {{ color:var(--teal-700); border-color:rgba(13,148,136,0.3); background:var(--teal-50); }}
+          .cp-pill.bad {{ color:#b91c1c; border-color:rgba(220,38,38,0.3); background:#fef2f2; }}
+          .cp-dot {{ width:7px; height:7px; border-radius:999px; background:currentColor;
+                     box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }}
 
           /* Section label. */
-          .cp-section { font-size:1.12rem; font-weight:700; color:#0f172a; letter-spacing:-0.01em;
-                        margin:0.2rem 0 0.1rem; }
-          .cp-section .num { color:#6366f1; font-weight:800; margin-right:0.4rem; }
-          .cp-sub { color:#64748b; font-size:0.88rem; margin:0 0 0.4rem; }
+          .cp-section {{ font-size:1.1rem; font-weight:700; color:var(--ink); letter-spacing:-0.01em;
+                         margin:0.2rem 0 0.1rem; display:flex; align-items:baseline; gap:0.55rem; }}
+          .cp-section .num {{ font-family:var(--mono); font-size:0.8rem; color:var(--teal);
+                              font-weight:700; letter-spacing:0.04em; }}
+          .cp-sub {{ color:var(--muted); font-size:0.88rem; margin:0 0 0.45rem; }}
 
-          /* KPI metric cards. */
-          div[data-testid="stMetric"] {
-            background:#ffffff; border:1px solid #e2e8f0; border-radius:16px;
-            padding:1.05rem 1.15rem 0.95rem;
-            box-shadow:0 1px 2px rgba(15,23,42,0.04), 0 10px 26px -16px rgba(15,23,42,0.18);
-            transition:transform .12s ease, box-shadow .12s ease;
-          }
-          div[data-testid="stMetric"]:hover {
-            transform:translateY(-2px);
-            box-shadow:0 1px 2px rgba(15,23,42,0.05), 0 16px 34px -18px rgba(79,70,229,0.32);
-          }
-          div[data-testid="stMetricLabel"] p {
-            font-size:0.72rem !important; font-weight:600 !important; letter-spacing:0.06em;
-            text-transform:uppercase; color:#64748b !important;
-          }
-          div[data-testid="stMetricValue"] {
-            font-size:1.72rem !important; font-weight:800 !important; color:#0f172a !important;
-            letter-spacing:-0.02em;
-          }
-          div[data-testid="stMetricDelta"] { font-size:0.78rem !important; }
+          /* Bento KPI cards. */
+          div[data-testid="stMetric"] {{
+            background:#ffffff; border:1px solid var(--line); border-radius:16px;
+            padding:1.0rem 1.15rem 0.9rem; position:relative; overflow:hidden;
+            box-shadow:0 1px 2px rgba(15,27,42,0.04), 0 12px 28px -18px rgba(15,27,42,0.22);
+            transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+          }}
+          div[data-testid="stMetric"]:hover {{
+            transform:translateY(-2px); border-color:#d7e0e8;
+            box-shadow:0 1px 2px rgba(15,27,42,0.05), 0 18px 36px -18px rgba(13,148,136,0.34);
+          }}
+          div[data-testid="stMetricLabel"] p {{
+            font-size:0.7rem !important; font-weight:600 !important; letter-spacing:0.07em;
+            text-transform:uppercase; color:var(--muted) !important;
+          }}
+          /* Monospace, tabular numerals — the data-tool hallmark. */
+          div[data-testid="stMetricValue"] {{
+            font-family:var(--mono) !important; font-size:1.7rem !important; font-weight:700 !important;
+            color:var(--ink) !important; letter-spacing:-0.01em; font-variant-numeric:tabular-nums;
+          }}
+          div[data-testid="stMetricDelta"] {{ font-size:0.76rem !important; font-weight:600 !important; }}
+          div[data-testid="stMetricDelta"] div {{ font-variant-numeric:tabular-nums; }}
 
-          /* Top "proof" cards get an indigo top accent. */
-          .cp-proof div[data-testid="stMetric"] { border-top:3px solid #6366f1; }
+          /* Top "proof" cards get a teal accent rail + tinted ground. */
+          .cp-proof div[data-testid="stMetric"] {{ border-top:3px solid var(--teal); background:linear-gradient(180deg,#fbfffe,#ffffff); }}
+
+          /* Quality-gate check grid. */
+          .cp-gate {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(225px,1fr)); gap:0.5rem; margin:0.3rem 0 0.2rem; }}
+          .cp-check {{ display:flex; align-items:center; gap:0.55rem; background:#fff; border:1px solid var(--line);
+                       border-radius:11px; padding:0.55rem 0.75rem; font-size:0.8rem; }}
+          .cp-check .ic {{ flex:0 0 auto; width:18px; height:18px; border-radius:6px; display:grid; place-items:center;
+                           font-size:0.7rem; font-weight:800; color:#fff; }}
+          .cp-check.pass .ic {{ background:var(--teal); }}
+          .cp-check.fail .ic {{ background:#dc2626; }}
+          .cp-check .nm {{ font-weight:600; color:#334e68; }}
+          .cp-check .rel {{ margin-left:auto; font-family:var(--mono); font-size:0.7rem; color:#94a3b8; }}
+
+          /* Lineage flow strip. */
+          .cp-flow {{ display:flex; flex-wrap:wrap; align-items:stretch; gap:0.4rem; margin:0.2rem 0 0.4rem; }}
+          .cp-stage {{ flex:1 1 150px; background:#fff; border:1px solid var(--line); border-radius:13px;
+                       padding:0.7rem 0.85rem; box-shadow:0 1px 2px rgba(15,27,42,0.04); }}
+          .cp-stage .st-n {{ font-family:var(--mono); font-size:0.68rem; font-weight:700; color:var(--teal); }}
+          .cp-stage .st-t {{ font-size:0.9rem; font-weight:700; color:var(--ink); margin-top:0.1rem; }}
+          .cp-stage .st-d {{ font-size:0.74rem; color:var(--muted); margin-top:0.15rem; line-height:1.4; }}
+          .cp-stage .st-v {{ font-family:var(--mono); font-size:0.74rem; color:var(--teal-700); font-weight:600; margin-top:0.3rem; }}
+          .cp-arrow {{ align-self:center; color:#cbd5e1; font-weight:700; }}
+          .cp-stage.gate {{ border-color:rgba(13,148,136,0.35); background:var(--teal-50); }}
 
           /* Tighten radio / slider chrome. */
-          div[data-testid="stRadio"] label p, div[data-testid="stSlider"] label p { font-weight:600; color:#334155; }
+          div[data-testid="stRadio"] label p, div[data-testid="stSlider"] label p {{ font-weight:600; color:#334155; }}
 
           /* Footer. */
-          .cp-footer { margin-top:2.4rem; padding-top:1.1rem; border-top:1px solid #e2e8f0;
-                       display:flex; flex-wrap:wrap; gap:0.5rem 1.2rem; align-items:center;
-                       justify-content:space-between; color:#64748b; font-size:0.82rem; }
-          .cp-footer a { color:#4f46e5; text-decoration:none; font-weight:600; }
-          .cp-footer a:hover { text-decoration:underline; }
-          .cp-footer code { background:#eef2ff; color:#4338ca; padding:0.08rem 0.4rem; border-radius:6px; font-size:0.78rem; }
+          .cp-footer {{ margin-top:2.4rem; padding-top:1.1rem; border-top:1px solid var(--line);
+                        display:flex; flex-wrap:wrap; gap:0.5rem 1.2rem; align-items:center;
+                        justify-content:space-between; color:var(--muted); font-size:0.82rem; }}
+          .cp-footer a {{ color:var(--teal); text-decoration:none; font-weight:600; }}
+          .cp-footer a:hover {{ text-decoration:underline; }}
+          .cp-footer code {{ font-family:var(--mono); background:var(--teal-50); color:var(--teal-700);
+                             padding:0.08rem 0.4rem; border-radius:6px; font-size:0.76rem; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -190,6 +269,10 @@ def pipeline_health() -> dict:
         results = quality.run(con, settings, raise_on_fail=False)
         gates_passed = sum(1 for r in results if r.passed)
         gates_total = len(results)
+        checks = [
+            {"name": r.name, "relation": r.relation, "passed": r.passed, "failing": r.failing_rows}
+            for r in results
+        ]
     finally:
         con.close()
     return {
@@ -198,6 +281,7 @@ def pipeline_health() -> dict:
         "marts": marts,
         "gates_passed": gates_passed,
         "gates_total": gates_total,
+        "checks": checks,
     }
 
 
@@ -236,7 +320,7 @@ st.markdown(
 st.markdown(
     "<p class='cp-lede'>Raw operational data &rarr; a DuckDB warehouse &rarr; "
     "layered SQL marts, behind a <b>data-quality gate that fails the build when the "
-    "numbers can&rsquo;t be trusted</b>. Everything below is served read-only straight "
+    "numbers can&rsquo;t be trusted</b>. Every figure below is served read-only straight "
     "from the warehouse the pipeline produced.</p>",
     unsafe_allow_html=True,
 )
@@ -255,13 +339,13 @@ gate_ok = health["gates_passed"] == health["gates_total"]
 st.markdown(
     f"""
     <div class="cp-pills">
-      <span class="cp-pill {'ok' if gate_ok else ''}">
+      <span class="cp-pill {'ok' if gate_ok else 'bad'}">
         <span class="cp-dot"></span>
         {'Quality gate passing' if gate_ok else 'Quality gate FAILED'} ·
-        {health['gates_passed']}/{health['gates_total']}
+        <b>{health['gates_passed']}/{health['gates_total']}</b>
       </span>
-      <span class="cp-pill">{health['raw_rows']:,} rows ingested · {health['raw_tables']} source tables</span>
-      <span class="cp-pill">{len(health['marts'])} analytics marts</span>
+      <span class="cp-pill"><b>{health['raw_rows']:,}</b>&nbsp;rows ingested · <b>{health['raw_tables']}</b>&nbsp;source tables</span>
+      <span class="cp-pill"><b>{len(health['marts'])}</b>&nbsp;analytics marts</span>
       <span class="cp-pill">DuckDB · in-process warehouse</span>
     </div>
     """,
@@ -335,13 +419,13 @@ trend = (
 rev_chart = (
     alt.Chart(trend)
     .mark_area(
-        opacity=0.9,
-        line={"color": INDIGO, "strokeWidth": 2.2},
+        opacity=0.95,
+        line={"color": TEAL_500, "strokeWidth": 2.4},
         color=alt.Gradient(
             gradient="linear",
             stops=[
                 alt.GradientStop(color="#ffffff", offset=0),
-                alt.GradientStop(color=INDIGO_SOFT, offset=1),
+                alt.GradientStop(color=TEAL_SOFT, offset=1),
             ],
             x1=1, x2=1, y1=1, y2=0,
         ),
@@ -412,7 +496,7 @@ with right:
         # Sort by the model's own step_index so order is data-driven, not list-driven.
         y=alt.Y("label:N", sort=alt.SortField(field="step_index", order="ascending"), title=None),
     )
-    funnel_bars = base.mark_bar(color=INDIGO, cornerRadiusEnd=4).encode(
+    funnel_bars = base.mark_bar(color=TEAL, cornerRadiusEnd=4).encode(
         x=alt.X("sessions:Q", title="Sessions", axis=alt.Axis(format="~s")),
         tooltip=[
             alt.Tooltip("label:N", title="Step"),
@@ -451,7 +535,7 @@ heat = (
         color=alt.Color(
             "retention_rate:Q",
             title="Retention",
-            scale=alt.Scale(range=["#eef2ff", "#a5b4fc", "#6366f1", "#4338ca"]),
+            scale=alt.Scale(range=TEAL_RAMP),
             legend=alt.Legend(format=".0%", orient="right"),
         ),
         tooltip=[
@@ -467,10 +551,57 @@ st.altair_chart(heat, use_container_width=True)
 # --- Lineage / architecture ---------------------------------------------------
 st.write("")
 st.markdown(
-    "<div class='cp-section'><span class='num'>07</span>How the data gets here</div>",
+    "<div class='cp-section'><span class='num'>07</span>Lineage &amp; quality gate</div>"
+    "<div class='cp-sub'>A dependency-free flow composes four stages; this dashboard "
+    "reads only the marts the gate signed off on.</div>",
     unsafe_allow_html=True,
 )
-with st.expander("Pipeline lineage — ingest → load → transform → quality gate", expanded=False):
+
+# Visible lineage flow strip (bento stages → quality gate → dashboard).
+marts_count = len(health["marts"])
+st.markdown(
+    f"""
+    <div class="cp-flow">
+      <div class="cp-stage">
+        <div class="st-n">01 · INGEST</div><div class="st-t">Generate</div>
+        <div class="st-d">Seeded synthetic generator</div>
+        <div class="st-v">{health['raw_rows']:,} rows · {health['raw_tables']} tables</div>
+      </div>
+      <div class="cp-arrow">&rarr;</div>
+      <div class="cp-stage">
+        <div class="st-n">02 · LOAD</div><div class="st-t">Warehouse</div>
+        <div class="st-d">Register raw files into DuckDB</div>
+        <div class="st-v">schema: raw</div>
+      </div>
+      <div class="cp-arrow">&rarr;</div>
+      <div class="cp-stage">
+        <div class="st-n">03 · TRANSFORM</div><div class="st-t">SQL marts</div>
+        <div class="st-d">staging &rarr; intermediate &rarr; marts</div>
+        <div class="st-v">{marts_count} marts</div>
+      </div>
+      <div class="cp-arrow">&rarr;</div>
+      <div class="cp-stage gate">
+        <div class="st-n">04 · QUALITY GATE</div><div class="st-t">Fail-closed</div>
+        <div class="st-d">A single failure exits non-zero &amp; halts the build</div>
+        <div class="st-v">{health['gates_passed']}/{health['gates_total']} passing</div>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Per-check status grid — the gate, made legible.
+_checks = sorted(health["checks"], key=lambda c: (c["passed"], c["name"]))
+_rows = "".join(
+    f"<div class='cp-check {'pass' if c['passed'] else 'fail'}'>"
+    f"<span class='ic'>{'✓' if c['passed'] else '!'}</span>"
+    f"<span class='nm'>{c['name']}</span>"
+    f"<span class='rel'>{c['relation']}</span></div>"
+    for c in _checks
+)
+st.markdown(f"<div class='cp-gate'>{_rows}</div>", unsafe_allow_html=True)
+
+with st.expander("Stage-by-stage detail", expanded=False):
     st.markdown(
         f"""
 A dependency-free flow composes four stages; the dashboard you are looking at

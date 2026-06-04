@@ -102,11 +102,13 @@ The image runs the full pipeline at build and start time, then serves the Stream
 ## Dashboard
 
 The Streamlit app reads the marts the quality gate signed off on and presents
-them as a polished analytics product — a branded header, **pipeline-health proof
-cards** (rows processed, marts built, data-quality gates passing) surfaced
-alongside the business KPIs, styled Altair charts in one consistent indigo
-palette, and an expandable lineage view of the ingest → load → transform →
-quality-gate flow.
+them as a polished, data-forward BI product — a branded header, a bento-style
+KPI grid with **pipeline-health proof cards** (rows processed, marts built,
+data-quality gates passing) surfaced alongside the business KPIs, monospace
+numerals for every figure, styled Altair charts in one cohesive teal palette,
+and a lineage + per-check quality-gate view of the ingest → load → transform →
+quality-gate flow. The theme (a confident teal accent on slate neutrals) lives
+in `.streamlit/config.toml`.
 
 ```bash
 make dashboard          # or: streamlit run dashboard/app.py  →  http://localhost:8501

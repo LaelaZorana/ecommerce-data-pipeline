@@ -1,13 +1,53 @@
-# CommercePipeline dashboard theme.
-# Matches the portfolio design language: indigo accent, slate neutrals, Inter.
+# CommercePipeline — dashboard theme.
+# Identity: ANALYTICS / BI — crisp, data-forward, professional.
+#
+# Distinct visual identity: a confident TEAL accent on cool slate neutrals,
+# with monospace numerals for figures (the data-tool hallmark). This is its
+# own identity, deliberately separate from the sibling portfolio projects.
 
 [theme]
 base = "light"
-primaryColor = "#4f46e5"            # indigo-600 — accent / interactive
-backgroundColor = "#f8fafc"         # slate-50 — page background
-secondaryBackgroundColor = "#ffffff"  # white — cards / sidebar
-textColor = "#0f172a"               # slate-900 — body text
-font = "Inter"
+
+# --- Brand ---
+primaryColor = "#0d9488"               # teal-600 — accent / interactive
+backgroundColor = "#f5f7f9"            # cool, slate-tinted canvas
+secondaryBackgroundColor = "#ffffff"   # white — cards / inputs
+textColor = "#0f1b2a"                  # near slate-900 — body text
+borderColor = "#e2e8f0"                # hairline borders on cards/inputs
+linkColor = "#0d9488"
+
+# --- Type ---
+font = "sans-serif"                    # clean system/Inter-like body stack
+headingFont = "sans-serif"
+codeFont = "monospace"                 # tabular numerals + code blocks
+baseRadius = "0.85rem"                 # rounded-xl cards, consistent corners
+showWidgetBorder = true
+
+# --- Cohesive chart palettes (one identity across every Altair chart) ---
+# Teal-led categorical scale (data-forward, not a rainbow).
+chartCategoricalColors = [
+  "#0d9488",  # teal-600
+  "#2563eb",  # blue-600
+  "#7c3aed",  # violet-600
+  "#d97706",  # amber-600
+  "#059669",  # emerald-600
+  "#db2777",  # pink-600
+  "#0891b2",  # cyan-600
+]
+# Single-hue teal ramp for sequential / heatmap data.
+chartSequentialColors = [
+  "#ecfeff", "#cffafe", "#99f6e4", "#5eead4",
+  "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59",
+]
+
+# --- Dark sidebar = a focused "control rail", BI-product style ---
+[theme.sidebar]
+backgroundColor = "#0f1b2a"
+secondaryBackgroundColor = "#16263a"
+textColor = "#cbd5e1"
+primaryColor = "#2dd4bf"               # brighter teal pops on dark
+borderColor = "#22344a"
+linkColor = "#2dd4bf"
 
 [server]
 headless = true
