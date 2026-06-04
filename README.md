@@ -1,12 +1,12 @@
 # CommercePipeline
 
-A batteries-included e-commerce analytics pipeline that turns raw operational data into trustworthy business marts — with data-quality gates that fail the build when the numbers can't be trusted.
+A batteries-included e-commerce analytics pipeline that turns raw operational data into trustworthy business marts, with data-quality gates that fail the build when the numbers can't be trusted.
 
 ## The problem
 
 Analytics dashboards are only as good as the data behind them. In most teams the path from raw operational tables to a "revenue by day" chart is a pile of ad-hoc notebooks and untested SQL: no lineage, no tests, and no gate that stops a broken extract from silently poisoning every downstream metric. The result is dashboards nobody trusts and incidents nobody catches until a number looks wrong in a meeting.
 
-CommercePipeline is a compact, end-to-end reference for doing it properly — ingestion, a warehouse, layered SQL models, automated data-quality gates, orchestration, and a dashboard — that runs locally in about a second with zero paid services.
+CommercePipeline is a compact, end-to-end reference for doing it properly (ingestion, a warehouse, layered SQL models, automated data-quality gates, orchestration, and a dashboard) that runs locally in about a second with zero paid services.
 
 ## What it does
 
@@ -37,7 +37,7 @@ flowchart LR
     marts --> dash["Streamlit dashboard<br/>revenue · products · funnel · cohorts"]
 ```
 
-The four stages are composed by a dependency-free flow (`pipeline.flow`), exposed on a CLI (`python -m pipeline run`), wired as a Makefile DAG, and — optionally — as a Prefect flow (`pipeline.orchestrate`).
+The four stages are composed by a dependency-free flow (`pipeline.flow`), exposed on a CLI (`python -m pipeline run`), wired as a Makefile DAG, and optionally as a Prefect flow (`pipeline.orchestrate`).
 
 ## Results / impact
 
@@ -46,12 +46,12 @@ A full run on the default seed (`make pipeline`) produces, in **~0.7s** end to e
 | Metric | Value |
 | --- | --- |
 | Raw rows generated | **103,839** across 5 tables (2,000 customers · 120 products · 12,000 orders · 30,120 order items · ~59,600 events) |
-| Marts produced | **5** — `daily_revenue`, `top_products`, `customer_cohort_retention`, `funnel_conversion` (+ `int_order_revenue`) |
+| Marts produced | **5**: `daily_revenue`, `top_products`, `customer_cohort_retention`, `funnel_conversion` (+ `int_order_revenue`) |
 | Data-quality gates | **16 / 16 passing** (not-null, uniqueness, accepted ranges, accepted values, referential integrity, mart sanity) |
 | Modelled revenue | ~$2.46M across 352 active days, ~35% view→purchase funnel conversion |
 | Tests | **19 passing** in ~1.1s (`pytest -q`) |
 
-Correctness is enforced, not assumed: tests assert exact aggregates on a known fixture, that the quality gate catches injected bad rows, and that two business invariants reconcile end to end — **funnel purchases == completed orders**, and **mart revenue == sum of completed line items**.
+Correctness is enforced, not assumed: tests assert exact aggregates on a known fixture, that the quality gate catches injected bad rows, and that two business invariants reconcile end to end: **funnel purchases == completed orders**, and **mart revenue == sum of completed line items**.
 
 ## Quickstart
 
@@ -76,14 +76,14 @@ Individual stages are addressable too: `python -m pipeline {ingest,load,transfor
 
 ## Tech stack
 
-- **Python 3.9+** — typed, dependency-light standard-library code
-- **DuckDB** — in-process analytical warehouse (no server to run)
-- **SQL** — layered staging → intermediate → mart models in plain `.sql` files
-- **pandas / pyarrow** — synthetic data generation and Parquet I/O
-- **Streamlit + Altair** — the analytics dashboard
-- **pytest** — fixture-based transform tests + data-quality gate tests
-- **Make** — the orchestration DAG (optional **Prefect** flow included)
-- **Docker / docker-compose** and **GitHub Actions** — reproducible build + CI
+- **Python 3.9+:** typed, dependency-light standard-library code
+- **DuckDB:** in-process analytical warehouse (no server to run)
+- **SQL:** layered staging → intermediate → mart models in plain `.sql` files
+- **pandas / pyarrow:** synthetic data generation and Parquet I/O
+- **Streamlit + Altair:** the analytics dashboard
+- **pytest:** fixture-based transform tests + data-quality gate tests
+- **Make:** the orchestration DAG (optional **Prefect** flow included)
+- **Docker / docker-compose** and **GitHub Actions:** reproducible build + CI
 
 ## Deploy
 
@@ -102,7 +102,7 @@ The image runs the full pipeline at build and start time, then serves the Stream
 ## Dashboard
 
 The Streamlit app reads the marts the quality gate signed off on and presents
-them as a polished, data-forward BI product — a branded header, a bento-style
+them as a polished, data-forward BI product: a branded header, a bento-style
 KPI grid with **pipeline-health proof cards** (rows processed, marts built,
 data-quality gates passing) surfaced alongside the business KPIs, monospace
 numerals for every figure, styled Altair charts in one cohesive teal palette,
