@@ -5,7 +5,7 @@ SELECT
     customer_id,
     CAST(order_ts AS TIMESTAMP)            AS order_ts,
     CAST(order_ts AS DATE)                 AS order_date,
-    date_trunc('month', CAST(order_ts AS DATE)) AS order_month,
+    CAST(date_trunc('month', CAST(order_ts AS DATE)) AS DATE) AS order_month,
     lower(status)                          AS status,
     (lower(status) = 'completed')          AS is_completed
 FROM raw.orders;
